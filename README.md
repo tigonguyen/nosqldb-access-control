@@ -20,17 +20,17 @@ MongoDB, like many NoSQL databases, provides access control at the database and 
 We will create a dataset in MongoDB and demonstrate how the lack of fine-grained access control can be a problem, then address this issue using access control policies encoding within documents.
 
 ### Initilization:
-1. Connect to MongoDB (from the container):
+Connect to MongoDB (from the container):
 ```
 docker exec -it mongodb mongosh -u admin -p password --authenticationDatabase admin
 ```
-2. Create Sample Data
+Create Sample Data
 Switch to the desired database (e.g., testDB):
 ```
 use companyDB;
 db.createCollection("employees");
 ```
-3. Insert Sample Data:
+Insert Sample Data:
 ```
 db.employees.insertMany([
   { _id: 1, name: "Alice", salary: 100000, department: "HR", role: "admin" },
@@ -40,7 +40,7 @@ db.employees.insertMany([
 ]);
 ```
 ### Demonstrating Access Control Problem
-1. Create users with basic access control:
+Create users with basic access control:
 ```
 db.createUser({
   user: "hrUser",
@@ -53,7 +53,7 @@ db.createUser({
   roles: [{ role: "read", db: "companyDB" }]
 });
 ```
-2. Test access control
+Test access control
 `regularUser` should only have access to the name and department fields, but due to MongoDB's lack of field-level access control, they can see everything:
 ```
 docker exec -it mongodb mongosh -u regularUser -p password --authenticationDatabase companyDB
@@ -65,7 +65,7 @@ use companyDB;
 db.employees.find({});
 ```
 ### Resolved by Application-Level Access Control
-1. Update MongoDB documents to include access control policies: 
+Update MongoDB documents to include access control policies: 
 We will modify the collection to include an `accessPolicy` field, so we can simulate field-level security for `salary`.
 ```
 db.employees.updateMany({}, [
@@ -81,7 +81,7 @@ db.employees.updateMany({}, [
   }
 ]);
 ```
-2. Application-Level Access Control
+Application-Level Access Control
 Here, the Python script will check the role of the user and filter the fields accordingly.
 ```
 from pymongo import MongoClient
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     admin_data = filter_data_by_role('admin')
     pprint(admin_data, indent=2)
 ```
-3. Expected Output:
+
 For `hrUser` (who can see the salary field):
 ```
 Data accessible to hrUser:
