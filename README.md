@@ -1,5 +1,11 @@
 # mongodb demo
-## MongoDB Initialization
+## 1. Fine-Grained Access Control Problem
+MongoDB, like many NoSQL databases, provides access control at the database and collections level but does not naturally provide field-level access control without complex configurations or custom implementation. This limitation means a user can either access the entire collection or none of it, making it difficult to implement access policies at a more granular level (e.g., row or field level).
+
+We will create a dataset in MongoDB and demonstrate how the lack of fine-grained access control can be a problem, then address this issue using access control policies encoding within documents.
+
+### Initilization:
+MongoDB Initialization
 ```
 version: '3'
 services:
@@ -14,12 +20,6 @@ services:
       - "27017:27017"
     command: --auth
 ```
-## 1. Fine-Grained Access Control Problem
-MongoDB, like many NoSQL databases, provides access control at the database and collections level but does not naturally provide field-level access control without complex configurations or custom implementation. This limitation means a user can either access the entire collection or none of it, making it difficult to implement access policies at a more granular level (e.g., row or field level).
-
-We will create a dataset in MongoDB and demonstrate how the lack of fine-grained access control can be a problem, then address this issue using access control policies encoding within documents.
-
-### Initilization:
 Connect to MongoDB (from the container):
 ```
 docker exec -it mongodb mongosh -u admin -p password --authenticationDatabase admin
