@@ -14,7 +14,7 @@ services:
       - "27017:27017"
     command: --auth
 ```
-## Fine-Grained Access Control Problem
+## 1. Fine-Grained Access Control Problem
 MongoDB, like many NoSQL databases, provides access control at the database and collections level but does not naturally provide field-level access control without complex configurations or custom implementation. This limitation means a user can either access the entire collection or none of it, making it difficult to implement access policies at a more granular level (e.g., row or field level).
 
 We will create a dataset in MongoDB and demonstrate how the lack of fine-grained access control can be a problem, then address this issue using access control policies encoding within documents.
@@ -150,7 +150,7 @@ Data accessible to regularUser:
 - Defining an Enforcement Monitor: Using middleware to enforce access control dynamically at the query level.
 - Modifying NoSQL Structures: Structuring documents differently to separate sensitive data into different collections.
 - Adapting Query Methods: Modifying queries dynamically based on the user's role and the associated access control model.
-## NoSQL Injection
+## 2. NoSQL Injection
 ### The simulation
 In a regular scenario, you might search for an employee named "Bob" like this:
 ```
@@ -242,7 +242,7 @@ if __name__ == "__main__":
     except ValueError as e:
         print(e)
 ```
-## Lack of Standard NoSQL Query Language
+## 3. Lack of Standard NoSQL Query Language
 ### Add Cassandra to Docker Compose
 Updated docker-compose.yml:
 ```
