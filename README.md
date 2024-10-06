@@ -369,3 +369,64 @@ Enter department to query: HR
 Employees in HR department:
 {'name': 'Alice', 'salary': Decimal('100000'), 'department': 'HR'}
 ```
+## 4. Audit is not Enabled by Default
+MongoDB has built-in support for audit logging, but it is not enabled by default. It provides detailed logs about database activity, including authentication, authorization, database changes, and access patterns.
+Features of MongoDB Auditing:
+- Auditing Events: Tracks all operations that involve user authentication, authorization, database access, and administrative commands.
+- Per-Node Auditing: In a replica set, audit logs can be collected from each node to track access at a distributed level.
+- Query Logging: MongoDB can log slow queries, failed attempts, and more, but detailed auditing requires configuration.
+### Enable Profiling for the database
+Connect to the MongoDB as `admin`:
+```
+docker exec -it mongodb mongosh -u admin -p password --authenticationDatabase admin
+```
+You can enable profiling at different levels:
+- Level 0: Profiling is off.
+- Level 1: Captures slow queries (queries slower than a specific threshold, usually 100ms).
+- Level 2: Captures all operations.
+Let’s enable full profiling for the accessControl database (which logs all operations):
+```
+use companyDB;
+db.setProfilingLevel(2);
+```
+### Run Operations and Review logs
+Let’s simulate some database access activity by querying and updating the database. These operations will be logged by MongoDB’s profiler.
+Run a query to fetch employees from the accessControl database
+```
+db.employees.find({ department: "HR" });
+db.employees.updateOne({ name: "Alice" }, { $set: { role: "manager" } });
+db.employees.insertOne({ name: "Eve", salary: 85000, department: "IT", role: "employee" });
+```
+Review the Audit Logs in MongoDB’s Profile Collection
+```
+db.system.profile.find().pretty();
+```
+This will return detailed information about each operation, including the time it took to execute, the user who performed the operation, and the command that was run.
+```
+[
+  {
+    op: 'query',
+    ns: 'companyDB.employees',
+    command: {
+      find: 'employees',
+      filter: { department: 'HR' },
+      lsid: { id: UUID('7e8b9b66-68e2-4659-98cd-fa9b9bc37998') },
+      '$db': 'companyDB'
+    },
+    ...
+    execStats: {
+      ...
+    },
+    ts: ISODate('2024-10-06T11:28:04.731Z'),
+    client: '127.0.0.1',
+    appName: 'mongosh 2.3.1',
+    allUsers: [ { user: 'admin', db: 'admin' } ],
+    user: 'admin@admin'
+  },
+  ...
+]  
+```
+You can also filter the logs by specific criteria, for example:
+```
+db.system.profile.find({ op: "query" }).pretty();
+```
