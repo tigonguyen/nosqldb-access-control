@@ -124,3 +124,69 @@ Manager Data:
 <Record e.name='Charlie' e.role='Employee' s.amount=85000>
 <Record e.name='David' e.role='Manager' s.amount=75000>
 ```
+## 2. NoSQL Injection
+### Example of a Vulnerable Query in Neo4j
+Assume we have a web application where a query is constructed dynamically using input provided by the user. For example:
+```
+def search_employee_by_name(user_input):
+    query = f"MATCH (e:Employee {{name: '{user_input}'}}) RETURN e.name, e.role"
+    return query
+```
+If the user inputs the name directly, the application constructs a query like:
+```
+MATCH (e:Employee {name: 'Bob'}) RETURN e.name, e.role
+```
+However, if the user provides malicious input, such as `Alice' RETURN e LIMIT 1; MATCH (n) DETACH DELETE n; //`, the query becomes:
+```
+MATCH (e:Employee {name: 'Alice'}) RETURN e LIMIT 1; MATCH (n) DETACH DELETE n;
+```
+This query:
+- Finds "Alice" and returns her record.
+- Deletes all nodes in the database (`MATCH (n) DETACH DELETE n`).
+The application doesn’t sanitize input, which allows this injection to happen. If you try querying the employees again, you’ll find that the database has been wiped out.
+```
+MATCH (e:Employee) RETURN e;
+(Empty result set, because all nodes were deleted)
+```
+### Fixing NoSQL Injection in Neo4j
+To prevent NoSQL injection in Neo4j, you need to:
+- Use parameterized queries to ensure that input is properly escaped and sanitized.
+- Validate user input to ensure that only valid names (or other types of input) are accepted.
+In Neo4j, the safest way to execute queries with user input is to use parameterized queries. This approach binds user inputs as parameters, ensuring they are safely handled.
+```
+from neo4j import GraphDatabase
+class EmployeeSearch:
+    def __init__(self, uri, user, password):
+        self.driver = GraphDatabase.driver(uri, auth=(user, password))
+    def close(self):
+        self.driver.close()
+    # Safely search for an employee using parameterized query
+    def search_employee_by_name(self, user_input):
+        with self.driver.session() as session:
+            result = session.run(
+                "MATCH (e:Employee {name: $name}) RETURN e.name, e.role",
+                name=user_input  # Pass user input as a parameter
+            )
+            return result
+# Usage example
+if __name__ == "__main__":
+    searcher = EmployeeSearch("bolt://localhost:7687", "neo4j", "password")
+    # This input is safe now
+    user_input = "Alice"
+    result = searcher.search_employee_by_name(user_input)
+    for record in result:
+        print(f"Name: {record['e.name']}, Role: {record['e.role']}")
+    searcher.close()
+```
+Now that we’ve secured the query, if an attacker tries to inject a malicious string, it will be treated as a safe parameter rather than executed as part of the query.
+```
+$ python3 injectionNeo4j.py
+Enter employee name: Alice' RETURN e LIMIT 1; MATCH (n) DETACH DELETE n;
+No employee found with the name Alice' RETURN e LIMIT 1; MATCH (n) DETACH DELETE n;
+```
+The query will safely escape it and will not delete any data.
+```
+$ python3 injectionNeo4j.py
+Enter employee name: Alice
+Name: Alice, Role: Manager
+```
