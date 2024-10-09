@@ -143,6 +143,7 @@ MATCH (e:Employee {name: 'Alice'}) RETURN e LIMIT 1; MATCH (n) DETACH DELETE n;
 This query:
 - Finds "Alice" and returns her record.
 - Deletes all nodes in the database (`MATCH (n) DETACH DELETE n`).
+
 The application doesn’t sanitize input, which allows this injection to happen. If you try querying the employees again, you’ll find that the database has been wiped out.
 ```
 MATCH (e:Employee) RETURN e;
@@ -152,6 +153,7 @@ MATCH (e:Employee) RETURN e;
 To prevent NoSQL injection in Neo4j, you need to:
 - Use parameterized queries to ensure that input is properly escaped and sanitized.
 - Validate user input to ensure that only valid names (or other types of input) are accepted.
+
 In Neo4j, the safest way to execute queries with user input is to use parameterized queries. This approach binds user inputs as parameters, ensuring they are safely handled.
 ```
 from neo4j import GraphDatabase
