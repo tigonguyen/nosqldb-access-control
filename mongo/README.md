@@ -384,6 +384,7 @@ You can enable profiling at different levels:
 - Level 0: Profiling is off.
 - Level 1: Captures slow queries (queries slower than a specific threshold, usually 100ms).
 - Level 2: Captures all operations.
+
 Let’s enable full profiling for the accessControl database (which logs all operations):
 ```
 use companyDB;
