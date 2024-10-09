@@ -190,3 +190,87 @@ $ python3 injectionNeo4j.py
 Enter employee name: Alice
 Name: Alice, Role: Manager
 ```
+## 3. Audit is not Available by Default
+Neo4j audit logging is an important feature for tracking access, queries, and other actions in the database. However, in Neo4j Community Edition, audit logging is not available by default. Audit logging is a feature that comes with Neo4j Enterprise Edition, and it allows administrators to track important actions performed on the database, such as:
+- Who accessed the database
+- What queries were run
+- What data was accessed or modified
+If you're using Neo4j Community Edition, you'll face a limitation: there is no built-in audit logging capability, which makes it difficult to track user actions for security or compliance purposes.
+### Enable Query Logging
+Change the `docker-compose.yaml` for Neo4j to below:
+```
+version: '3'
+services:
+  neo4j:
+    image: neo4j:enterprise
+    container_name: neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/password  # Set the default username and password
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes  # You must accept the license for Enterprise Edition
+    ports:
+      - "7474:7474"  # HTTP access
+      - "7687:7687"  # Bolt protocol access
+```
+Then, we stop the old version and spin up the database again:
+```
+docker compose down
+docker compose up -d
+```
+Now, to access the container, we can run:
+```
+docker exec -it neo4j bash
+```
+Then, we run these commands to edit the configuration to enable query audit:
+```
+apt update
+apt install vim
+vim conf/neo4j.conf
+```
+Find the below line and configure as enabled:
+```
+db.logs.query.enabled=INFO
+db.logs.query.threshold=0
+```
+Then, log out and restart the container.
+```
+docker restart neo4j
+```
+### Test the audit logs
+Now, we can create some example data on the neo4j:
+```
+CREATE 
+       (Alice:Employee {name: 'Alice', role: 'Manager'}),
+       (Bob:Employee {name: 'Bob', role: 'Employee'}),
+       (Charlie:Employee {name: 'Charlie', role: 'Employee'}),
+       (David:Employee {name: 'David', role: 'Manager'}),
+
+       (HR:Department {name: 'HR'}),
+       (Finance:Department {name: 'Finance'}),
+
+       (Salary1:Salary {amount: 100000}),
+       (Salary2:Salary {amount: 90000}),
+       (Salary3:Salary {amount: 85000}),
+       (Salary4:Salary {amount: 75000}),
+
+       (Alice)-[:WORKS_IN]->(HR),
+       (David)-[:WORKS_IN]->(HR),
+       (Bob)-[:WORKS_IN]->(Finance),
+       (Charlie)-[:WORKS_IN]->(Finance),
+
+       (Alice)-[:HAS_SALARY]->(Salary1),
+       (Bob)-[:HAS_SALARY]->(Salary2),
+       (Charlie)-[:HAS_SALARY]->(Salary3),
+       (David)-[:HAS_SALARY]->(Salary4);
+```
+Then, query it
+```
+MATCH (e:Employee)-[:HAS_SALARY]->(s:Salary)
+RETURN e.name, e.role, s.amount;
+```
+To access the query logs from the container, we can run below command. Then, we can see the audit logs have been captured there.
+```
+docker exec -it neo4j bash
+# In the container bash
+cd ./logs
+cat query.log
+```

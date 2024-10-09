@@ -1,10 +1,11 @@
 version: '3'
 services:
   neo4j:
-    image: neo4j:latest
+    image: neo4j:enterprise
     container_name: neo4j
     environment:
-      NEO4J_AUTH: neo4j/password  # Default username and password
+      - NEO4J_AUTH=neo4j/password  # Set the default username and password
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes  # You must accept the license for Enterprise Edition
     ports:
       - "7474:7474"  # HTTP access
       - "7687:7687"  # Bolt protocol access
