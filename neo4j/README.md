@@ -195,6 +195,7 @@ Neo4j audit logging is an important feature for tracking access, queries, and ot
 - Who accessed the database
 - What queries were run
 - What data was accessed or modified
+
 If you're using Neo4j Community Edition, you'll face a limitation: there is no built-in audit logging capability, which makes it difficult to track user actions for security or compliance purposes.
 ### Enable Query Logging
 Change the `docker-compose.yaml` for Neo4j to below:
